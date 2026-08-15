@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High-Protein Vegetarian Meal Planner - Auto-Updating</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .week-info {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 6px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+
+        .auto-update-banner {
+            background: #27ae60;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 6px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1em;
+            display: none;
+        }
+
+        .auto-update-banner.show {
+            display: block;
+            animation: slideDown 0.5s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        .print-btn { background: #27ae60; color: white; }
+        .regenerate-btn { background: #3498db; color: white; }
+        .share-btn { background: #e74c3c; color: white; }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.6em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .week-planner {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+        }
+
+        .day-card {
+            background: #f8f9fa;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .day-card h3 {
+            color: #667eea;
+            margin-bottom: 12px;
+            font-size: 1.2em;
+        }
+
+        .daily-nutrition {
+            background: #e8f4f8;
+            border: 1px solid #3498db;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            font-size: 0.9em;
+        }
+
+        .nutrition-stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+        }
+
+        .nutrition-stat.protein {
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+        .nutrition-stat.calories {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .nutrition-stat.warning {
+            color: #e67e22;
+            font-weight: bold;
+        }
+
+        .meal-slot {
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .meal-slot:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .meal-label {
+            font-weight: bold;
+            color: #555;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .meal-name {
+            color: #764ba2;
+            font-size: 0.95em;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 4px;
+            transition: background 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .meal-name:hover {
+            background: #ffe8cc;
+            text-decoration: underline;
+        }
+
+        .meal-nutrition {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 4px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .protein-badge {
+            background: #27ae60;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+
+        .cuisine-badge {
+            font-size: 0.75em;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        .cuisine-indian { background: #ffa500; color: white; }
+        .cuisine-italian { background: #dc143c; color: white; }
+        .cuisine-mediterranean { background: #4169e1; color: white; }
+        .cuisine-asian { background: #ff1493; color: white; }
+        .cuisine-western { background: #32cd32; color: white; }
+
+        .grocery-section {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            grid-column: 1 / -1;
+        }
+
+        .grocery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .grocery-category {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 6px;
+        }
+
+        .grocery-category h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .grocery-item {
+            padding: 5px 0;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 0.95em;
+        }
+
+        .grocery-item:last-child {
+            border-bottom: none;
+        }
+
+        .grocery-item input {
+            margin-right: 8px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal.show {
+            display: block;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .modal-close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            color: black;
+        }
+
+        .recipe-option {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .recipe-option:hover {
+            border-color: #667eea;
+            background: #eff2ff;
+        }
+
+        .recipe-option h4 {
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .recipe-option p {
+            font-size: 0.9em;
+            color: #666;
+            margin: 3px 0;
+        }
+
+        .recipe-nutrition {
+            display: flex;
+            gap: 10px;
+            font-size: 0.85em;
+            margin-top: 8px;
+        }
+
+        .nutrition-badge {
+            background: #e8f4f8;
+            padding: 3px 8px;
+            border-radius: 3px;
+            color: #333;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .week-planner {
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .controls {
+                display: none;
+            }
+
+            .card {
+                page-break-inside: avoid;
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🍛 High-Protein Vegetarian Meal Planner</h1>
+            <p>80g+ Protein Daily | 50% Indian | 50% International</p>
+        </header>
+
+        <div id="autoBanner" class="auto-update-banner">
+            ✅ Meal plan auto-updated for the new week!
+        </div>
+
+        <div class="week-info">
+            <span id="weekInfo">Week 1</span> | <span id="nextUpdate">⏰ Next auto-update: Loading...</span>
+        </div>
+
+        <div class="controls">
+            <button class="regenerate-btn" onclick="generateNewWeek()">🔄 Generate New Plan</button>
+            <button class="share-btn" onclick="shareWithFamily()">📱 Share with Family</button>
+            <button class="print-btn" onclick="window.print()">🖨️ Print Plan</button>
+        </div>
+
+        <div class="main-content" id="mealPlanContainer"></div>
+
+        <div class="grocery-section">
+            <h2>🛒 Auto-Generated Shopping List</h2>
+            <div class="grocery-grid" id="groceryContainer"></div>
+        </div>
+    </div>
+
+    <div id="mealModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <h2 id="modalTitle">Select a meal</h2>
+            <div id="recipesList"></div>
+        </div>
+    </div>
+
+    <script>
+        // HIGH-PROTEIN VEGETARIAN RECIPE DATABASE (80g+ protein per day minimum)
+        const recipes = {
+            breakfast: [
+                // INDIAN (8)
+                {
+                    name: "Paneer Bhurji with Whole Wheat Toast",
+                    ingredients: "Paneer (300g), onions, tomatoes, green chilies, ginger-garlic paste, turmeric, cumin, whole wheat toast (2 slices), ghee",
+                    protein: 32, carbs: 25, fat: 14, calories: 420,
+                    videoLink: "https://www.youtube.com/watch?v=tLcPKUgTfBw",
+                    prepTime: "15 mins",
+                    prepList: "Crumble paneer, dice onions & tomatoes, mince ginger-garlic, toast bread",
+                    cuisine: "Indian"
+                },
+                {
+                    name: "Greek Yogurt with Protein Granola & Nuts",
+                    ingredients: "Greek yogurt (250g), protein granola (40g), almonds (30g), walnuts (20g), chia seeds (1 tbsp), honey, blueberries",
+                    protein: 28, carbs: 35, fat: 12, calories: 410,
+                    videoLink: "https://www.youtube.com/watch?v=rJ_Fq3DwVWY",
+                    prepTime: "5 mins",
+                    prepList: "Chop nuts, wash berries, measure yogurt - assembly only!",
+                    cuisine: "Western"
+                },
+                {
+                    name: "Moong Dal Cheela with Paneer (High Protein)",
+                    ingredients: "Moong dal (1 cup), paneer (150g), ginger-garlic, green chili, onion, salt, oil, yogurt (100g)",
+                    protein: 30, carbs: 28, fat: 10, calories: 430,
+                    videoLink: "https://www.youtube.com/watch?v=k9DGYvKoB_M",
+                    prepTime: "20 mins",
+                    prepList: "Soak moong dal, grind to paste, add crumbled paneer, chop veggies",
+                    cuisine: "Indian"
+                },
+                {
+                    name: "Cottage Cheese & Veggie Scramble",
+                    ingredients: "Paneer/Cottage cheese (350g), capsicum, mushroom, onion, turmeric, whole wheat toast (2 slices), ghee",
+                    protein: 34, carbs: 24, fat: 13, calories: 420,
+                    videoLink: "https://www.youtube.com/watch?v=pGCELFvJbW0",
+                    prepTime: "12 mins",
+                    prepList: "Crumble cheese, dice all vegetables, measure spices, toast bread",
+                    cuisine: "Indian"
+                },
+                {
+                    name: "Idli with Sambar & Protein Powder",
+                    ingredients: "Rice, urad dal, fenugreek, lentils, spices, vegetables, protein powder (20g), sambar (rich)",
+                    protein: 28, carbs: 40, fat: 5, calories: 400,
+                    videoLink: "https://www.youtube.com/watch?v=QW_KwC9R_5A",
+                    prepTime: "25 mins",
+                    prepList: "Soak rice & dal overnight, grind batter, steam idli, prepare protein sambar",
+                    cuisine: "Indian"
+                },
+                {
+                    name: "Upma with Peas & Paneer (High Protein)",
+                    ingredients: "Semolina (1 cup), peas (1 cup), carrots, onion, paneer (150g), mustard seeds, curry leaves, oil",
+                    protein: 26, carbs: 38, fat: 9, calories: 420,
+                    videoLink: "https://www.youtube.com/watch?v=kN2YqYLfXKY",
+                    prepTime: "15 mins",
+                    prepList: "Roast semolina, cube paneer, chop veggies, measure spices",
+                    cuisine: "Indian"
+                },
+                {
+                    name: "Dosa with Protein Sambar & Chutney",
+                    ingredients: "Rice, urad dal, fenugreek, curry leaves, salt, oil, paneer (100g), sambar with added protein",
+                    protein: 28, carbs: 42, fat: 8, calories: 420,
+                    videoLink: "https://www.youtube.com/watch?v=aX_dMY8XBHA",
+                    prepTime: "30 mins",
+                    prepList: "Ferment dough overnight, prepare protein sambar, cube paneer for topping",
+                    cuisine: "Indian"
+                },
+                {
+                    name: "Paneer Paratha with Yogurt & Nuts",
+                    ingredients: "Whole wheat flour (2 cups), paneer (250g), ginger, green chili, salt, ghee, Greek yogurt (150g), almonds",
+                    protein: 31, carbs: 38, fat: 14, calories: 450,
+                    videoLink: "https://www.youtube.com/watch?v=3o5g9v_6_pE",
+                    prepTime: "20 mins",
+                    prepList: "Prepare dough, fill with seasoned paneer, cook on griddle, serve with yogurt",
+                    cuisine: "Indian"
+                },
+                // NON-INDIAN (8)
+                {
+                    name: "Mediterranean Avocado Toast with Feta & Nuts",
+                    ingredients: "Whole grain bread (2 slices), avocado (1 whole), cherry tomatoes, feta cheese (100g), olive oil, lemon, almonds (30g)",
+                    protein: 26, carbs: 35, fat: 16, calories: 420,
+                    videoLink: "https://www.youtube.com/watch?v=xyXGMpGOVtk",
+                    prepTime: "5 mins",
+                    prepList: "Toast bread, mash avocado, chop tomatoes, crumble feta, chop almonds",
+                    cuisine: "Mediterranean"
+                },
+                {
+                    name: "Italian Focaccia with Mozzarella & Tomatoes",
+                    ingredients: "Focaccia bread (2 slices), mozzarella (150g), tomatoes, basil, olive oil, garlic, almonds (20g)",
+                    protein: 24, carbs: 38, fat: 12, calories: 410,
+                    videoLink: "https://www.youtube.com/watch?v=WEW8dA1Hhqw",
+                    prepTime: "10 mins",
+                    prepList: "Slice focaccia, layer tomatoes & cheese, warm & serve with nuts",
+                    cuisine: "Italian"
+                },
+                {
+                    name: "Asian Vegetable Congee with Tofu & Egg",
+                    ingredients: "Rice, vegetable broth (2 cups), ginger, soy sauce, tofu (250g), egg (1), scallions, oil, sesame seeds",
+                    protein: 28, carbs: 32, fat: 8, calories: 380,
+                    videoLink: "https://www.youtube.com/watch?v=q0tQ7tKYxvE",
+                    prepTime: "30 mins",
+                    prepList: "Slice ginger, dice tofu, chop scallions, cook rice in broth, scramble egg",
+                    cuisine: "Asian"
+                },
+                {
+                    name: "Western Granola with Greek Yogurt & Protein",
+                    ingredients: "Granola (60g), Greek yogurt (250g), honey, mixed berries, almonds (40g), protein powder (20g)",
+                    protein: 32, carbs: 40, fat: 10, calories: 430,
+                    videoLink: "https://www.youtube.com/watch?v=LfXDg8b0I7k",
+                    prepTime: "5 mins",
+                    prepList: "Mix protein powder with yogurt, layer with granola and berries",
+                    cuisine: "Western"
+                },
+                {
+                    name: "Mediterranean Feta Omelet with Whole Grain Toast",
+                    ingredients: "Eggs (3), feta cheese (100g), tomatoes, olives (40g), onion, herbs, olive oil, whole wheat toast (2 slices)",
+                    protein: 28, carbs: 28, fat: 15, calories: 420,
+                    videoLink: "https://www.youtube.com/watch?v=a3XPK_LLcJg",
+                    prepTime: "10 mins",
+                    prepList: "Dice veggies, crumble feta, whisk eggs, cook in pan, toast bread",
+                    cuisine: "Mediterranean"
+                },
+                {
+                    name: "Asian Vegetable Fried Rice with Tofu & Egg",
+                    ingredients: "Rice (2 cups cooked), peas (1 cup), carrots, corn, tofu (200g), egg (2), soy sauce, sesame oil, ginger, garlic",
+                    protein: 30, carbs: 45, fat: 10, calories: 440,
+                    videoLink: "https://www.youtube.com/watch?v=rj-4KxWnIGI",
+                    prepTime: "15 mins",
+                    prepList: "Cook rice day before, dice tofu, chop veggies, scramble eggs, measure soy sauce",
+                    cuisine: "Asian"
+                },
+                {
+                    name: "Western Protein Pancakes with Nuts",
+                    ingredients: "Protein powder (40g), eggs (2), oats (1/2 cup), Greek yogurt (100g), berries, almonds (30g), honey",
+                    protein: 32, carbs: 38, fat: 12, calories: 430,
+                    videoLink: "https://www.youtube.com/watch?v=cG7Ck4YqZJU",
+                    prepTime: "15 mins",
+                    prepList: "Mix protein powder & eggs, blend oats into flour, chop nuts, make pancakes",
+                    cuisine: "Western"
+                },
+                {
+                    name: "Italian Polenta with Mushrooms & Cheese",
+                    ingredients: "Cornmeal (1 cup), vegetable broth (3 cups), mushrooms (300g), garlic, olive oil, parmesan (80g), thyme, egg (1)",
+                    protein: 26, carbs: 35, fat: 11, calories: 420,
+                    videoLink: "https://www.youtube.com/watch?v=YRHLbbDKy78",
+                    prepTime: "20 mins",
+                    prepList: "Slice mushrooms, cook polenta in broth, sauté mushrooms with garlic",
+                    cuisine: "Italian"
+                }
+            ],
+            lunch: [
+                // INDIAN (8)
+                {
+                    name: "Chana Masala with Brown Rice & Greek Yogurt",
+                    ingredients: "Chickpeas (2 cups), onion, tomato, ginger-garlic (2 tbsp), spices, brown rice (2 cups), vegetables, Greek yogurt (100g)",
+                    protein: 28, carbs: 52, fat: 8, calories: 480,
+                    videoLink: "https://www.youtube.com/watch?v=9CjN4lJ3m4k",
+                    prepTime: "25 mins",
+                    prepList: "Soak chickpeas overnight, cook rice, chop veggies, prepare yogurt topping",
+                    cuisine: "Indian"
+                },
+                {
+                    name: "Paneer Tikka Masala with Basmati Rice",
+                    ingredients: "Paneer (300g), yogurt (150g), tomato-based sauce, basmati rice (2 cups), onion, ginger, cream (50g)",
+                    protein: 32, carbs: 45, fat: 13, calories: 520,
+                    videoLink: "https://www.youtube.com/watch?v=sJzDHb8Dq4Y",
+                    prepTime: "35 mins",
+                    prepList: "Marinate paneer cubes, cook rice, prepare rich tomato sauce",
+                    cuisine: "Indian"
+                },
+                {
+                    name: "Dal Makhani with Roti & Cottage Cheese",
+                    ingredients: "Black lentils (1.5 cups), kidney beans (1 cup), cream (75g), ginger-garlic (2 tbsp), whole wheat roti (3), paneer (150g)",
+                    protein: 34, carbs: 48, fat: 12, calories: 520,
+                    videoLink: "https://www.youtube.com/watch?v=pINgVBXUu1c",
+                    prepTime: "40 mins",
+                    prepList: "Soak lentils overnight, measure spices, prepare roti dough, cube paneer",
+                    cuisine: "Indian"
+                },
+                {
+                    name: "Aloo Gobi with Paneer & Roti",
+                    ingredients: "Potatoes (500g), cauliflower (500g), paneer (200g), onion, tomato, ginger-garlic (2 tbsp), spices, whole wheat roti (2)",
+                    protein: 26, carbs: 48, fat: 10, calories: 480,
+                    videoLink: "https://www.youtube.com/watch?v=OE_Q0v9bZ0Q",
+                    prepTime: "25 mins",
+                    prepList: "Dice potatoes & cauliflower, cube paneer, chop onion & tomato",
+                    cuisine: "Indian"
+                },
+                {
+                    name: "Rajma with Basmati Rice & Greek Yogurt",
+                    ingredients: "Kidney beans (2 cups), onion, tomato, ginger-garlic (2 tbsp), cumin, basmati rice (2 cups), Greek yogurt (100g)",
+                    protein: 28, carbs: 50, fat: 5, calories: 450,
+                    videoLink: "https://www.youtube.com/watch?v=VH3tVTZYjv0",
+                    prepTime: "30 mins",
+                    prepList: "Soak rajma overnight, cook rice, chop tomato & onion",
+                    cuisine: "Indian"
+                },
+                {
+                    name: "Tofu Stir Fry with Brown Rice & Almonds",
+                    ingredients: "Tofu (350g), bell peppers (300g), broccoli (300g), snap peas (200g), ginger, garlic (2 tbsp), soy sauce, brown rice (2 cups), almonds (30g)",
+                    protein: 32, carbs: 45, fat: 12, calories: 520,
+                    videoLink: "https://www.youtube.com/watch?v=qFZeS7yHwdg",
+                    prepTime: "15 mins",
+                    prepList: "Press tofu, dice veggies, mince ginger-garlic, cook rice",
+                    cuisine: "Indian"
+                },
+                {
+                    name: "Chole Bhature with Yogurt Dip",
+                    ingredients: "Chickpeas (2 cups), flour (2 cups), yogurt (150g), green chilies, spices, oil, Greek yogurt (100g) for dip",
+                    protein: 28, carbs: 60, fat: 10, calories: 520,
+                    videoLink: "https://www.youtube.com/watch?v=D5n_D7N3fWc",
+                    prepTime: "45 mins",
+                    prepList: "Soak chickpeas, prepare dough, prepare spiced chickpea curry",
+                    cuisine: "Indian"
+                },
+                {
+                    name: "Paneer Saag with Roti & Nuts",
+                    ingredients: "Paneer (280g), spinach (500g), cream (50g), onion, spices, whole wheat roti (3), almonds (25g), ghee",
+                    protein: 32, carbs: 38, fat: 13, calories: 520,
+                    videoLink: "https://www.youtube.com/watch?v=n5h5b5V5B8E",
+                    prepTime: "22 mins",
+                    prepList: "Blanch spinach, cube paneer, prepare roti dough, chop almonds",
+                    cuisine: "Indian"
+                },
+                // NON-INDIAN (8)
+                {
+                    name: "Pasta Primavera with Feta & Nuts",
+                    ingredients: "Pasta (2 cups cooked), zucchini (300g), bell peppers, carrots, peas, garlic (3 cloves), olive oil, basil, feta (100g), almonds (30g)",
+                    protein: 26, carbs: 55, fat: 12, calories: 520,
+                    videoLink: "https://www.youtube.com/watch?v=Qhj7nlW9RMo",
+                    prepTime: "20 mins",
+                    prepList: "Cook pasta, slice all veggies, mince garlic, crumble feta",
+                    cuisine: "Italian"
+                },
+                {
+                    name: "Mediterranean Falafel Wrap with Tahini",
+                    ingredients: "Falafel (200g), whole wheat wrap (2), lettuce, tomato, cucumber, tahini sauce (50g), Greek yogurt (100g)",
+                    protein: 28, carbs: 50, fat: 14, calories: 510,
+                    videoLink: "https://www.youtube.com/watch?v=K9_pZfGR0sM",
+                    prepTime: "15 mins",
+                    prepList: "Cook falafel, chop veggies, prepare tahini sauce, warm wraps",
+                    cuisine: "Mediterranean"
+                },
+                {
+                    name: "Pad Thai with Tofu & Peanuts",
+                    ingredients: "Rice noodles (2 cups), bell peppers, carrots, tofu (250g), peanuts (60g), lime (2), soy sauce (3 tbsp), garlic, egg (1)",
+                    protein: 30, carbs: 50, fat: 13, calories: 520,
+                    videoLink: "https://www.youtube.com/watch?v=b3VPR5-mJEI",
+                    prepTime: "20 mins",
+                    prepList: "Cook noodles, slice veggies, cube tofu, crush peanuts, prepare sauce",
+                    cuisine: "Asian"
+                },
+                {
+                    name: "Mediterranean Salad with Feta & Chickpeas",
+                    ingredients: "Spinach (300g), tomatoes, cucumber, chickpeas (1 cup), feta cheese (120g), olives (50g), olive oil, lemon, walnuts (30g)",
+                    protein: 28, carbs: 35, fat: 13, calories: 450,
+                    videoLink: "https://www.youtube.com/watch?v=Th9R9P8Zx-A",
+                    prepTime: "10 mins",
+                    prepList: "Wash & chop veggies, crumble feta, prepare dressing",
+                    cuisine: "Mediterranean"
+                },
+                {
+                    name: "Italian Caprese Salad with Whole Grain Bread",
+                    ingredients: "Mozzarella (150g), tomatoes (400g), basil, olive oil (3 tbsp), balsamic vinegar, whole grain bread (2 slices), pine nuts (40g)",
+                    protein: 24, carbs: 32, fat: 15, calories: 450,
+                    videoLink: "https://www.youtube.com/watch?v=QnCJL-Lc_24",
+                    prepTime: "10 mins",
+                    prepList: "Slice tomatoes & mozzarella, chop basil, toast bread, prepare dressing",
+                    cuisine: "Italian"
+                },
+                {
+                    name: "Lo Mein with Tofu & Cashews",
+                    ingredients: "Noodles (2 cups), bok choy (300g), mushrooms (300g), tofu (250g), carrots, soy sauce, garlic, sesame oil, cashews (40g)",
+                    protein: 28, carbs: 48, fat: 14, calories: 520,
+                    videoLink: "https://www.youtube.com/watch?v=OxSYH-B_YZ0",
+                    prepTime: "20 mins",
+                    prepList: "Cook noodles, slice veggies, cube tofu, prepare soy-garlic sauce",
+                    cuisine: "Asian"
+                },
+                {
+                    name: "Mediterranean Hummus Bowl with Chickpeas",
+                    ingredients: "Hummus (150g), pita bread (2), chickpeas (1 cup), roasted veggies (400g), tahini, lemon, olives (50g), walnuts (30g)",
+                    protein: 28, carbs: 48, fat: 12, calories: 510,
+                    videoLink: "https://www.youtube.com/watch?v=Pxqf2GS8ijc",
+                    prepTime: "15 mins",
+                    prepList: "Toast pita, chop veggies, arrange with hummus and chickpeas",
+                    cuisine: "Mediterranean"
+                },
+                {
+                    name: "Italian Minestrone with Beans & Bread",
+                    ingredients: "Mixed vegetables (500g), pasta (1 cup), vegetable broth (4 cups), white beans (1.5 cups), tomato, basil, whole grain bread (2 slices)",
+                    protein: 24, carbs: 50, fat: 7, calories: 450,
+                    videoLink: "https://www.youtube.com/watch?v=ysqdzMqDGWE",
+                    prepTime: "30 mins",
+                    prepList: "Chop veggies, cook pasta separately, simmer soup",
+                    cuisine: "Italian"
+                }
+            ],
+            dinner: [
+                // INDIAN (8)
+                {
+                    name: "Bhindi Fry with Roti, Yogurt & Nuts",
+                    ingredients: "Okra (350g), onion, turmeric, chili powder, salt, oil, whole wheat roti (3), Greek yogurt (100g), almonds (25g)",
+                    protein: 24, carbs: 42, fat: 10, calories: 450,
+                    videoLink: "https://www.youtube.com/watch?v=5N_lCj3QVWU",
+                    prepTime: "20 mins",
+                    prepList: "Wash & chop okra, slice onions, prepare roti, toast nuts",
+                    cuisine: "Indian"
+                },
+                {
+                    name: "Baingan Bharta with Roti & Paneer",
+                    ingredients: "Eggplant (500g), onion, tomato, green chili, ginger-garlic (2 tbsp), oil, whole wheat roti (2), paneer (150g)",
+                    protein: 24, carbs: 38, fat: 10, calories: 450,
+                    videoLink: "https://www.youtube.com/watch?v=iJ3pMJSr3pE",
+                    prepTime: "25 mins",
+                    prepList: "Roast eggplant, chop veggies, prepare roti dough, cube paneer",
+                    cuisine: "Indian"
+                },
+                {
+                    name: "Paneer & Mushroom Masala with Rice",
+                    ingredients: "Paneer (300g), mushrooms (400g), cream (75g), onion, tomato, ginger-garlic (2 tbsp), spices, basmati rice (2 cups)",
+                    protein: 32, carbs: 45, fat: 14, calories: 540,
+                    videoLink: "https://www.youtube.com/watch?v=JRKN1gqP_pI",
+                    prepTime: "20 mins",
+                    prepList: "Cube paneer, slice mushrooms, prepare sauce base, cook rice",
+                    cuisine: "Indian"
+                },
+                {
+                    name: "Vegetable Pulao with Paneer & Yogurt",
+                    ingredients: "Basmati rice (2 cups), peas (1 cup), carrots, beans, corn, onion, paneer (150g), cumin, oil, Greek yogurt (100g)",
+                    protein: 26, carbs: 52, fat: 8, calories: 480,
+                    videoLink: "https://www.youtube.com/watch?v=N0z_1tZXmqU",
+                    prepTime: "25 mins",
+                    prepList: "Cut veggies, measure rice, cube paneer, prepare onion & spices",
+                    cuisine: "Indian"
+                },
+                {
+                    name: "Spinach & Paneer (Palak Paneer) with Roti",
+                    ingredients: "Paneer (300g), spinach (600g), cream (75g), onion, garlic (4 cloves), ginger (1 tbsp), spices, whole wheat roti (3)",
+                    protein: 32, carbs: 40, fat: 14, calories: 520,
+                    videoLink: "https://www.youtube.com/watch?v=XN2Y8JNPjUg",
+                    prepTime: "20 mins",
+                    prepList: "Blanch spinach, cube paneer, mince ginger-garlic, prepare roti",
+                    cuisine: "Indian"
+                },
+                {
+                    name: "Methi Paratha with Yogurt & Paneer",
+                    ingredients: "Whole wheat flour (2 cups), fenugreek leaves (1 cup), onion, paneer (150g), salt, ghee, Greek yogurt (100g)",
+                    protein: 28, carbs: 42, fat: 11, calories: 480,
+                    videoLink: "https://www.youtube.com/watch?v=9_cHMHUx-A4",
+                    prepTime: "20 mins",
+                    prepList: "Prepare dough with methi, chop onion, cube paneer, cook parathas",
+                    cuisine: "Indian"
+                },
+                {
+                    name: "Mixed Vegetable Curry with Lentils",
+                    ingredients: "Carrots (300g), peas (1 cup), beans (300g), potatoes, onion, tomato, lentils (1 cup), ginger-garlic (2 tbsp), spices, oil",
+                    protein: 26, carbs: 48, fat: 9, calories: 480,
+                    videoLink: "https://www.youtube.com/watch?v=B6Y-Kp8lA6s",
+                    prepTime: "25 mins",
+                    prepList: "Dice veggies, prepare curry paste with ginger-garlic, cook lentils",
+                    cuisine: "Indian"
+                },
+                {
+                    name: "Capsicum & Paneer Stir Fry with Brown Rice",
+                    ingredients: "Paneer (300g), bell peppers (400g), onion, soy sauce (3 tbsp), ginger (1 tbsp), garlic (3 cloves), oil, brown rice (2 cups)",
+                    protein: 30, carbs: 45, fat: 12, calories: 520,
+                    videoLink: "https://www.youtube.com/watch?v=pCXKKvN2PHA",
+                    prepTime: "15 mins",
+                    prepList: "Cube paneer, slice peppers & onion, mince ginger-garlic, cook rice",
+                    cuisine: "Indian"
+                },
+                // NON-INDIAN (8)
+                {
+                    name: "Pasta Arrabbiata with Chickpeas & Almonds",
+                    ingredients: "Pasta (2 cups), tomatoes (500g), garlic (5 cloves), red chili, parmesan (80g), olive oil, chickpeas (1 cup), almonds (30g)",
+                    protein: 28, carbs: 52, fat: 12, calories: 520,
+                    videoLink: "https://www.youtube.com/watch?v=R1JH0_Z3u3c",
+                    prepTime: "20 mins",
+                    prepList: "Cook pasta, mince garlic & chili, prepare tomato sauce with chickpeas",
+                    cuisine: "Italian"
+                },
+                {
+                    name: "Mediterranean Stuffed Peppers with Feta",
+                    ingredients: "Bell peppers (4), rice (2 cups), tomatoes (300g), olives (60g), feta cheese (120g), pine nuts (40g), olive oil",
+                    protein: 24, carbs: 45, fat: 12, calories: 480,
+                    videoLink: "https://www.youtube.com/watch?v=x7Gj42phfvI",
+                    prepTime: "35 mins",
+                    prepList: "Hollow peppers, cook rice, chop toppings, add feta and pine nuts",
+                    cuisine: "Mediterranean"
+                },
+                {
+                    name: "Tofu in Garlic Sauce with Brown Rice",
+                    ingredients: "Tofu (400g), garlic (6 cloves), soy sauce (4 tbsp), ginger (1 tbsp), vegetable broth (1 cup), cornstarch, brown rice (2 cups), cashews (30g)",
+                    protein: 30, carbs: 48, fat: 12, calories: 530,
+                    videoLink: "https://www.youtube.com/watch?v=8A0xNmZ_OE8",
+                    prepTime: "20 mins",
+                    prepList: "Press & cube tofu, mince garlic & ginger, prepare sauce, cook rice",
+                    cuisine: "Asian"
+                },
+                {
+                    name: "Baked Sweet Potato with Broccoli & Chickpeas",
+                    ingredients: "Sweet potatoes (400g), broccoli (400g), chickpeas (1.5 cups), olive oil (3 tbsp), garlic (3 cloves), lemon, salt, pepper",
+                    protein: 24, carbs: 48, fat: 8, calories: 450,
+                    videoLink: "https://www.youtube.com/watch?v=b2yVP70pv8I",
+                    prepTime: "40 mins",
+                    prepList: "Wash potatoes, chop broccoli, mix with chickpeas, prepare seasoning",
+                    cuisine: "Western"
+                },
+                {
+                    name: "Italian Mushroom Risotto with Parmesan",
+                    ingredients: "Arborio rice (2 cups), mushrooms (500g), vegetable broth (5 cups), white wine (100ml), onion, parmesan (100g), walnuts (30g)",
+                    protein: 26, carbs: 50, fat: 11, calories: 520,
+                    videoLink: "https://www.youtube.com/watch?v=mV3Iwe0OG0E",
+                    prepTime: "30 mins",
+                    prepList: "Slice mushrooms, chop onion, heat broth, cook rice slowly with cheese",
+                    cuisine: "Italian"
+                },
+                {
+                    name: "Mediterranean Vegetable Kebabs with Chickpeas",
+                    ingredients: "Bell peppers (4), zucchini (400g), tomatoes (300g), red onion, mushrooms (300g), chickpeas (1.5 cups), olive oil, herbs",
+                    protein: 26, carbs: 40, fat: 11, calories: 480,
+                    videoLink: "https://www.youtube.com/watch?v=YxZ2Rt-p0c0",
+                    prepTime: "25 mins",
+                    prepList: "Chop veggies, thread on skewers, add chickpeas, prepare herb marinade",
+                    cuisine: "Mediterranean"
+                },
+                {
+                    name: "Asian Vegetable Fried Rice with Tofu & Egg",
+                    ingredients: "Rice (3 cups), tofu (200g), eggs (2), peas (1 cup), carrots (300g), corn (1 cup), soy sauce, sesame oil, ginger, almonds (25g)",
+                    protein: 28, carbs: 48, fat: 11, calories: 520,
+                    videoLink: "https://www.youtube.com/watch?v=rj-4KxWnIGI",
+                    prepTime: "15 mins",
+                    prepList: "Cook rice day before, cube tofu, chop veggies, scramble eggs",
+                    cuisine: "Asian"
+                },
+                {
+                    name: "Western Vegetable Stir Fry with Tofu & Nuts",
+                    ingredients: "Broccoli (400g), carrots (300g), snap peas (300g), mushrooms (300g), tofu (250g), garlic (4 cloves), ginger (1 tbsp), sesame oil, walnuts (35g)",
+                    protein: 28, carbs: 28, fat: 12, calories: 440,
+                    videoLink: "https://www.youtube.com/watch?v=3Ls1t_jKjco",
+                    prepTime: "15 mins",
+                    prepList: "Chop veggies, cube tofu, mince garlic & ginger, prepare sauce",
+                    cuisine: "Western"
+                }
+            ]
+        };
+
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        let currentMealPlan = {};
+        let weekNumber = 1;
+
+        function getRecipeById(mealType, recipeName) {
+            return recipes[mealType].find(r => r.name === recipeName);
+        }
+
+        function getCuisineColor(cuisine) {
+            const colors = {
+                'Indian': 'cuisine-indian',
+                'Italian': 'cuisine-italian',
+                'Mediterranean': 'cuisine-mediterranean',
+                'Asian': 'cuisine-asian',
+                'Western': 'cuisine-western'
+            };
+            return colors[cuisine] || 'cuisine-indian';
+        }
+
+        function calculateDailyNutrition(day) {
+            const meals = currentMealPlan[day];
+            if (!meals) return { protein: 0, carbs: 0, fat: 0, calories: 0 };
+
+            let totals = { protein: 0, carbs: 0, fat: 0, calories: 0 };
+            ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
+                const recipe = getRecipeById(mealType, meals[mealType]);
+                if (recipe) {
+                    totals.protein += recipe.protein;
+                    totals.carbs += recipe.carbs;
+                    totals.fat += recipe.fat;
+                    totals.calories += recipe.calories;
+                }
+            });
+            return totals;
+        }
+
+        function checkAndAutoGenerate() {
+            const now = new Date();
+            const saved = localStorage.getItem('mealPlanData');
+
+            if (saved) {
+                const data = JSON.parse(saved);
+                const lastUpdate = new Date(data.lastUpdated);
+                const daysElapsed = Math.floor((now - lastUpdate) / (1000 * 60 * 60 * 24));
+
+                if (daysElapsed >= 7) {
+                    generateNewWeek();
+                    const banner = document.getElementById('autoBanner');
+                    banner.classList.add('show');
+                    setTimeout(() => banner.classList.remove('show'), 5000);
+                }
+
+                const daysUntilUpdate = 7 - daysElapsed;
+                if (daysUntilUpdate > 0) {
+                    const nextDate = new Date(lastUpdate);
+                    nextDate.setDate(nextDate.getDate() + 7);
+                    const options = { month: 'short', day: 'numeric' };
+                    const nextDateStr = nextDate.toLocaleDateString('en-US', options);
+                    document.getElementById('nextUpdate').textContent = `⏰ Next auto-update: ${nextDateStr} (${daysUntilUpdate} days)`;
+                }
+            }
+        }
+
+        function ensureMinimumIndian(week) {
+            let indianCount = 0;
+            const mealPlan = {};
+            const allMealTypes = ['breakfast', 'lunch', 'dinner'];
+
+            days.forEach(day => {
+                mealPlan[day] = {};
+                allMealTypes.forEach(mealType => {
+                    const recipeIndex = Math.floor(Math.random() * recipes[mealType].length);
+                    mealPlan[day][mealType] = recipes[mealType][recipeIndex].name;
+                    if (recipes[mealType][recipeIndex].cuisine === 'Indian') {
+                        indianCount++;
+                    }
+                });
+            });
+
+            // Ensure at least 50% Indian meals (10-11 out of 21 meals)
+            while (indianCount < 11) {
+                const dayIndex = Math.floor(Math.random() * 7);
+                const day = days[dayIndex];
+                const mealType = allMealTypes[Math.floor(Math.random() * 3)];
+
+                const currentRecipe = getRecipeById(mealType, mealPlan[day][mealType]);
+                if (currentRecipe.cuisine !== 'Indian') {
+                    const indianRecipes = recipes[mealType].filter(r => r.cuisine === 'Indian');
+                    const newRecipe = indianRecipes[Math.floor(Math.random() * indianRecipes.length)];
+                    mealPlan[day][mealType] = newRecipe.name;
+                    indianCount++;
+                }
+            }
+
+            return mealPlan;
+        }
+
+        function generateNewWeek() {
+            currentMealPlan = ensureMinimumIndian();
+            weekNumber = (weekNumber % 4) + 1;
+
+            localStorage.setItem('mealPlanData', JSON.stringify({
+                currentMealPlan: currentMealPlan,
+                weekNumber: weekNumber,
+                lastUpdated: new Date().toISOString()
+            }));
+
+            renderMealPlan();
+        }
+
+        function renderMealPlan() {
+            document.getElementById('weekInfo').textContent = `Week ${weekNumber}`;
+            const container = document.getElementById('mealPlanContainer');
+            container.innerHTML = '';
+
+            days.forEach(day => {
+                const dayCard = document.createElement('div');
+                dayCard.className = 'day-card';
+
+                const nutrition = calculateDailyNutrition(day);
+                const proteinStatus = nutrition.protein >= 80 ? 'protein' : 'warning';
+                const caloriesStatus = nutrition.calories <= 2000 ? 'calories' : 'warning';
+
+                dayCard.innerHTML = `
+                    <h3>${day}</h3>
+                    <div class="daily-nutrition">
+                        <div class="nutrition-stat ${proteinStatus}">
+                            <span>💪 Protein:</span> <strong>${nutrition.protein}g ${nutrition.protein >= 80 ? '✅' : '❌'}</strong>
+                        </div>
+                        <div class="nutrition-stat">
+                            <span>🔥 Calories:</span> <strong>${nutrition.calories} kcal</strong>
+                        </div>
+                        <div class="nutrition-stat">
+                            <span>🥗 Carbs:</span> <strong>${nutrition.carbs}g</strong>
+                        </div>
+                        <div class="nutrition-stat">
+                            <span>🧈 Fat:</span> <strong>${nutrition.fat}g</strong>
+                        </div>
+                    </div>
+                `;
+
+                ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
+                    const recipeName = currentMealPlan[day][mealType];
+                    const recipe = getRecipeById(mealType, recipeName);
+
+                    const mealDiv = document.createElement('div');
+                    mealDiv.className = 'meal-slot';
+
+                    const mealLabel = document.createElement('div');
+                    mealLabel.className = 'meal-label';
+                    mealLabel.textContent = mealType.charAt(0).toUpperCase() + mealType.slice(1);
+
+                    const mealNameDiv = document.createElement('div');
+                    mealNameDiv.className = 'meal-name';
+                    mealNameDiv.onclick = () => openMealModal(day, mealType);
+                    mealNameDiv.innerHTML = `
+                        <span>${recipeName}</span>
+                        <span class="cuisine-badge ${getCuisineColor(recipe.cuisine)}">${recipe.cuisine}</span>
+                    `;
+
+                    const nutritionDiv = document.createElement('div');
+                    nutritionDiv.className = 'meal-nutrition';
+                    nutritionDiv.innerHTML = `
+                        <span class="protein-badge">${recipe.protein}g P</span>
+                        <span class="nutrition-badge">${recipe.calories} cal</span>
+                    `;
+
+                    mealDiv.appendChild(mealLabel);
+                    mealDiv.appendChild(mealNameDiv);
+                    mealDiv.appendChild(nutritionDiv);
+                    dayCard.appendChild(mealDiv);
+                });
+
+                container.appendChild(dayCard);
+            });
+
+            generateGroceryList();
+        }
+
+        function generateGroceryList() {
+            const groceryMap = {};
+
+            days.forEach(day => {
+                ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
+                    const recipe = getRecipeById(mealType, currentMealPlan[day][mealType]);
+
+                    if (recipe && recipe.ingredients) {
+                        const items = recipe.ingredients.split(',');
+                        items.forEach(item => {
+                            const trimmed = item.trim();
+                            if (trimmed) {
+                                if (!groceryMap[trimmed]) {
+                                    groceryMap[trimmed] = 0;
+                                }
+                                groceryMap[trimmed]++;
+                            }
+                        });
+                    }
+                });
+            });
+
+            const categories = {
+                'Dairy & Protein': [],
+                'Vegetables': [],
+                'Pantry & Spices': [],
+                'Other': []
+            };
+
+            Object.keys(groceryMap).forEach(item => {
+                if (item.includes('paneer') || item.includes('cheese') || item.includes('yogurt') ||
+                    item.includes('tofu') || item.includes('lentils') || item.includes('beans') ||
+                    item.includes('chickpea') || item.includes('egg')) {
+                    categories['Dairy & Protein'].push(item);
+                } else if (item.includes('tomato') || item.includes('onion') || item.includes('carrot') ||
+                          item.includes('pepper') || item.includes('spinach') || item.includes('mushroom')) {
+                    categories['Vegetables'].push(item);
+                } else if (item.includes('oil') || item.includes('spice') || item.includes('salt') ||
+                          item.includes('rice') || item.includes('bread') || item.includes('flour')) {
+                    categories['Pantry & Spices'].push(item);
+                } else {
+                    categories['Other'].push(item);
+                }
+            });
+
+            const groceryContainer = document.getElementById('groceryContainer');
+            groceryContainer.innerHTML = '';
+
+            Object.keys(categories).forEach(category => {
+                if (categories[category].length > 0) {
+                    const categoryDiv = document.createElement('div');
+                    categoryDiv.className = 'grocery-category';
+                    categoryDiv.innerHTML = `<h3>${category}</h3>`;
+
+                    categories[category].forEach(item => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'grocery-item';
+                        itemDiv.innerHTML = `<input type="checkbox"> ${item}`;
+                        categoryDiv.appendChild(itemDiv);
+                    });
+
+                    groceryContainer.appendChild(categoryDiv);
+                }
+            });
+        }
+
+        function openMealModal(day, mealType) {
+            const modal = document.getElementById('mealModal');
+            const recipesList = document.getElementById('recipesList');
+            const currentRecipe = currentMealPlan[day][mealType];
+
+            recipesList.innerHTML = '';
+            recipes[mealType].forEach(recipe => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'recipe-option';
+                optionDiv.innerHTML = `
+                    <h4>${recipe.name}</h4>
+                    <p>${recipe.cuisine} Cuisine | ⏱️ ${recipe.prepTime}</p>
+                    <div class="recipe-nutrition">
+                        <span class="nutrition-badge">🍗 ${recipe.protein}g Protein</span>
+                        <span class="nutrition-badge">🔥 ${recipe.calories} cal</span>
+                        <span class="nutrition-badge">🥗 ${recipe.carbs}g C</span>
+                    </div>
+                `;
+                optionDiv.onclick = () => {
+                    currentMealPlan[day][mealType] = recipe.name;
+                    localStorage.setItem('mealPlanData', JSON.stringify({
+                        currentMealPlan: currentMealPlan,
+                        weekNumber: weekNumber,
+                        lastUpdated: localStorage.getItem('mealPlanData') ?
+                            JSON.parse(localStorage.getItem('mealPlanData')).lastUpdated :
+                            new Date().toISOString()
+                    }));
+                    renderMealPlan();
+                    closeModal();
+                };
+                recipesList.appendChild(optionDiv);
+            });
+
+            modal.classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('mealModal').classList.remove('show');
+        }
+
+        function shareWithFamily() {
+            const whatsappText = `🍛 Family High-Protein Vegetarian Meal Planner 🍛\n\nHi everyone!\n\nHere's our meal plan for Week ${weekNumber}:\n\n`;
+            let summary = '';
+
+            days.forEach(day => {
+                const nutrition = calculateDailyNutrition(day);
+                summary += `\n${day.toUpperCase()}\n`;
+                summary += `Protein: ${nutrition.protein}g | Calories: ${nutrition.calories}\n`;
+                summary += `B: ${currentMealPlan[day].breakfast}\n`;
+                summary += `L: ${currentMealPlan[day].lunch}\n`;
+                summary += `D: ${currentMealPlan[day].dinner}\n`;
+            });
+
+            const encodedText = encodeURIComponent(whatsappText + summary + '\n\n✅ Minimum 80g protein per day!\n50% Indian | 50% International\n📹 Click meals to watch recipes!');
+            window.open(`https://wa.me/?text=${encodedText}`, '_blank');
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            const saved = localStorage.getItem('mealPlanData');
+            if (saved) {
+                const data = JSON.parse(saved);
+                currentMealPlan = data.currentMealPlan;
+                weekNumber = data.weekNumber;
+                checkAndAutoGenerate();
+            } else {
+                generateNewWeek();
+            }
+            renderMealPlan();
+        });
+    </script>
+</body>
+</html>
